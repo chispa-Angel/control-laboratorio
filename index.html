@@ -208,6 +208,7 @@
     const MAX_TIEMPO_ALUMNO_MS = 10 * 60 * 1000; 
     let horaInicioAlumno = Date.now();
     let countdownInterval = null;
+    let sesionExpirada = false;
 
     window.onload = function() {
       cargarDispositivoVinculado();
@@ -224,6 +225,7 @@
 
     function iniciarTemporizadorAlumno() {
       horaInicioAlumno = Date.now();
+      sesionExpirada = false;
       clearInterval(countdownInterval);
       
       countdownInterval = setInterval(() => {
@@ -242,7 +244,8 @@
       const tiempoTranscurrido = Date.now() - horaInicioAlumno;
       const milisegundosRestantes = MAX_TIEMPO_ALUMNO_MS - tiempoTranscurrido;
 
-      if (milisegundosRestantes <= 0) {
+      if (milisegundosRestantes <= 0 || sesionExpirada) {
+        sesionExpirada = true;
         clearInterval(countdownInterval);
         document.getElementById('alumnoView').classList.add('hidden');
         document.getElementById('sessionExpiredView').classList.remove('hidden');
@@ -283,6 +286,7 @@
         const pass = prompt('Ingrese la contraseña docente unificada:');
         if (pass === claveAdmin) {
           esAdmin = true;
+          sesionExpirada = false; // El admin nunca expira
           document.getElementById('timerBadge').classList.add('hidden');
           document.getElementById('adminPanel').classList.remove('hidden');
           document.getElementById('adminLockIcon').className = 'fa-solid fa-lock-open text-emerald-400';
@@ -351,6 +355,15 @@
     }
 
     async function marcarEntrada() {
+      // DOBLE VALIDACIÓN DE SEGURIDAD CONTRA EXPIRACIÓN
+      if (!esAdmin) {
+        verificarExpiracionAlumno();
+        if (sesionExpirada) {
+          alert("Tu sesión ha expirado (más de 10 minutos). Debes escanear el QR nuevamente.");
+          return;
+        }
+      }
+
       const nombre = document.getElementById('nombreAlumno').value.trim();
       const matricula = document.getElementById('matriculaAlumno').value.trim();
       const programa = document.getElementById('programaAlumno').value.trim();
@@ -396,6 +409,15 @@
     }
 
     async function marcarSalida() {
+      // DOBLE VALIDACIÓN DE SEGURIDAD CONTRA EXPIRACIÓN
+      if (!esAdmin) {
+        verificarExpiracionAlumno();
+        if (sesionExpirada) {
+          alert("Tu sesión ha expirado (más de 10 minutos). Debes escanear el QR nuevamente para marcar salida.");
+          return;
+        }
+      }
+
       const matricula = document.getElementById('matriculaAlumno').value.trim();
       const notas = document.getElementById('notasAlumno').value.trim();
 
@@ -453,7 +475,7 @@
 
         let fechaLimpia = r.fecha;
         if (fechaLimpia.includes("T")) {
-          fechaLimpia = fechaLimpia.split("T")[0];
+          fechaLimpia = fechaLinstricto = fechaLimpia.split("T")[0];
         }
 
         if (fechaLimpia === hoyStr) totalHoy++;
