@@ -180,10 +180,10 @@
   </main>
 
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfR5zacNucsmtbmwp9DSYNPAnVIKvvpVnHB6BHrIAtMFq2b9Bs6qclzys-nKAMW7NF/exec";
+    // NUEVA URL DE GOOGLE APPS SCRIPT
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxF1SE_WqGJEs0ctt4xWPSenaVSftvRwBZkrA1no0SacIIUF9IJRnOkAV_Q2-q-enUN/exec";
 
-    // Contraseña única unificada (modifica '1234' o cambia '_v3' para actualizar en navegadores)
-    let claveAdmin = localStorage.getItem('claveAdmin_lab_v3') || '1234';
+    let claveAdmin = localStorage.getItem('claveAdmin_lab_v4') || '1234';
     let esAdmin = false;
     let qrTimer = null;
     let qrTimeLeft = 30;
@@ -195,7 +195,6 @@
       setInterval(cargarDatosDesdeGoogle, 15000);
     };
 
-    // ACCESO UNIFICADO A LA PIZARRA QR CON LA MISMA CONTRASEÑA
     function solicitarAccesoPizarraQR() {
       const pass = prompt('Ingrese la contraseña docente unificada para activar el QR:');
       if (pass === claveAdmin) {
@@ -211,7 +210,6 @@
       clearInterval(qrTimer);
     }
 
-    // ACCESO UNIFICADO AL PANEL DOCENTE CON LA MISMA CONTRASEÑA
     function solicitarAccesoAdmin() {
       if (esAdmin) {
         esAdmin = false;
@@ -236,7 +234,7 @@
       const nueva = prompt('Ingrese la nueva contraseña unificada para el QR y el Panel:');
       if (nueva && nueva.trim().length > 0) {
         claveAdmin = nueva.trim();
-        localStorage.setItem('claveAdmin_lab_v3', claveAdmin);
+        localStorage.setItem('claveAdmin_lab_v4', claveAdmin);
         alert('¡Contraseña actualizada con éxito para todo el sistema!');
       }
     }
@@ -369,7 +367,7 @@
         document.getElementById('notasAlumno').value = '';
         setTimeout(cargarDatosDesdeGoogle, 1000);
       } catch (e) {
-        mostrarAlerta('Error al cambiar en el servidor.', 'bg-rose-100 text-rose-800');
+        mostrarAlerta('Error al conectar con el servidor.', 'bg-rose-100 text-rose-800');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Marcar Salida';
@@ -387,10 +385,17 @@
       const hoyStr = new Date().toLocaleDateString('es-MX');
 
       registrosCargados.forEach(r => {
-        if (r.fecha === hoyStr) totalHoy++;
+        if (!r.nombre || !r.matricula || r.nombre.includes(":") || r.matricula.toLowerCase() === "matricula") return;
+
+        let fechaLimpia = r.fecha;
+        if (fechaLimpia.includes("T")) {
+          fechaLimpia = fechaLimpia.split("T")[0];
+        }
+
+        if (fechaLimpia === hoyStr) totalHoy++;
         if (!r.horaSalida || r.horaSalida === "") {
           enLab++;
-          if (r.fecha !== hoyStr) sinSalida++;
+          if (fechaLimpia !== hoyStr) sinSalida++;
         }
 
         if (query && !r.nombre.toLowerCase().includes(query) && !r.matricula.toLowerCase().includes(query)) return;
@@ -409,7 +414,7 @@
             <div class="font-bold text-slate-800">${r.nombre}</div>
             <div class="text-xs text-slate-400">${r.matricula} ${r.programa ? '• ' + r.programa : ''}</div>
           </td>
-          <td class="p-3 text-xs">${r.fecha}</td>
+          <td class="p-3 text-xs">${fechaLimpia}</td>
           <td class="p-3 text-xs font-semibold text-emerald-700">${r.horaEntrada}</td>
           <td class="p-3 text-xs font-semibold ${r.horaSalida ? 'text-indigo-700' : 'text-slate-400'}">${r.horaSalida || 'Pendiente'}</td>
           <td class="p-3">${estatusBadge}</td>
