@@ -21,8 +21,8 @@
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <button onclick="togglePizarraQR()" class="bg-indigo-700 hover:bg-indigo-600 px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shadow">
-          <i class="fa-solid fa-qrcode"></i> Modo Pizarra QR
+        <button onclick="solicitarAccesoPizarraQR()" class="bg-indigo-700 hover:bg-indigo-600 px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shadow border border-indigo-500">
+          <i class="fa-solid fa-qrcode text-amber-400"></i> Modo Pizarra QR
         </button>
         <button onclick="solicitarAccesoAdmin()" class="bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition border border-slate-600">
           <i class="fa-solid fa-lock text-amber-400" id="adminLockIcon"></i> <span id="adminBtnText">Acceso Docente</span>
@@ -34,11 +34,11 @@
   <!-- CONTENIDO PRINCIPAL -->
   <main class="max-w-6xl mx-auto px-4 py-6">
 
-    <!-- VISTA A: PIZARRA QR (PANTALLA DE ENTRADA EN EL LAB) -->
+    <!-- VISTA A: PIZARRA QR (PROTEGIDA POR CONTRASEÑA) -->
     <div id="pizarraQRView" class="hidden bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-200 mb-6">
       <div class="flex justify-between items-center mb-4">
-        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Pantalla del Laboratorio</span>
-        <button onclick="togglePizarraQR()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Pantalla Autorizada del Laboratorio</span>
+        <button onclick="cerrarPizarraQR()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
       </div>
       <h2 class="text-2xl font-bold text-slate-800 mb-1">Escanea para Registrar Asistencia</h2>
       <p class="text-sm text-slate-500 mb-6">El código QR expira y cambia cada 30 segundos por seguridad.</p>
@@ -58,7 +58,7 @@
           <div id="qrProgressBar" class="bg-indigo-600 h-full w-full transition-all duration-1000"></div>
         </div>
       </div>
-      <p class="text-xs text-slate-400"><i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i> Conexión en vivo activa</p>
+      <p class="text-xs text-slate-400"><i class="fa-solid fa-shield-halved text-emerald-500"></i> Acceso restringido únicamente a personal autorizado</p>
     </div>
 
     <!-- VISTA B: FORMULARIO DEL ALUMNO (MÓVIL) -->
@@ -180,7 +180,6 @@
   </main>
 
   <script>
-    // URL DE TU SCRIPT DE GOOGLE SHEETS
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfR5zacNucsmtbmwp9DSYNPAnVIKvvpVnHB6BHrIAtMFq2b9Bs6qclzys-nKAMW7NF/exec";
 
     let claveAdmin = localStorage.getItem('claveAdmin_lab') || '1234';
@@ -191,10 +190,25 @@
 
     window.onload = function() {
       cargarDispositivoVinculado();
-      iniciarQRGenerator();
       cargarDatosDesdeGoogle();
-      setInterval(cargarDatosDesdeGoogle, 15000); // Auto-sincronizar cada 15 segundos
+      setInterval(cargarDatosDesdeGoogle, 15000);
     };
+
+    // SOLICITAR CLAVE PARA ACTIVAR QR EN EL LAB
+    function solicitarAccesoPizarraQR() {
+      const pass = prompt('Ingrese la contraseña docente para activar el QR en esta pantalla:');
+      if (pass === claveAdmin) {
+        document.getElementById('pizarraQRView').classList.remove('hidden');
+        iniciarQRGenerator();
+      } else if (pass !== null) {
+        alert('Contraseña incorrecta. No se puede activar la Pizarra QR.');
+      }
+    }
+
+    function cerrarPizarraQR() {
+      document.getElementById('pizarraQRView').classList.add('hidden');
+      clearInterval(qrTimer);
+    }
 
     function solicitarAccesoAdmin() {
       if (esAdmin) {
@@ -246,12 +260,6 @@
       }, 1000);
     }
 
-    function togglePizarraQR() {
-      const view = document.getElementById('pizarraQRView');
-      view.classList.toggle('hidden');
-      if (!view.classList.contains('hidden')) iniciarQRGenerator();
-    }
-
     function cargarDispositivoVinculado() {
       const vinculo = JSON.parse(localStorage.getItem('vinculo_alumno_lab') || 'null');
       if (vinculo) {
@@ -267,12 +275,11 @@
       localStorage.setItem('vinculo_alumno_lab', JSON.stringify({ nombre, matricula, programa }));
     }
 
-    // SINCRONIZACIÓN CON GOOGLE SHEETS
     async function cargarDatosDesdeGoogle() {
       try {
         const res = await fetch(GOOGLE_SCRIPT_URL);
         const data = await res.json();
-        registrosCargados = data.reverse(); // Ordenar del más reciente al más antiguo
+        registrosCargados = data.reverse();
         renderTablaLocal();
       } catch (e) {
         console.log("Esperando nuevos registros...");
