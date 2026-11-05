@@ -328,7 +328,7 @@
                 new QRCode(qrContainer, { text: baseUrl, width: 180, height: 180 });
             }
 
-            const segundosRestantes = 30 - (Math.floor(Date.now() / 1000) % 30);
+            const segundosRestantes = 10 - (Math.floor(Date.now() / 1000) % 10);
             document.getElementById('qrTimerText').innerText = segundosRestantes + 's';
             document.getElementById('qrProgressBar').style.width = ((segundosRestantes / 30) * 100) + '%';
         }
