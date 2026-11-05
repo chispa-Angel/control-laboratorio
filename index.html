@@ -45,7 +45,7 @@
             </button>
         </div>
 
-        <!-- VISTA A: PIZARRA QR (PROTEGIDA) -->
+        <!-- VISTA A: PIZARRA QR (CON PIN DINÁMICO) -->
         <div id="pizarraQRView" class="hidden bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-200 mb-6 max-w-2xl mx-auto">
             <div class="flex justify-between items-center mb-4">
                 <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">Transmitiendo en Vivo</span>
@@ -92,6 +92,7 @@
             <div id="statusAlert" class="hidden p-3 rounded-lg text-sm mb-4"></div>
 
             <form id="registroForm" onsubmit="event.preventDefault();" class="space-y-4">
+                <!-- CAMPO DEL PIN DE SEGURIDAD -->
                 <div class="p-4 bg-amber-50 border-2 border-amber-300 rounded-xl">
                     <label class="block text-xs font-black text-amber-900 uppercase mb-1 flex items-center gap-1">
                         <i class="fa-solid fa-key text-amber-600"></i> PIN de la Pizarra *
@@ -145,7 +146,6 @@
                 <button onclick="cambiarPasswordAdmin()" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-3 py-1.5 rounded-md font-bold transition-colors">Cambiar Clave</button>
             </div>
 
-            <!-- METRICAS DE HOY -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
@@ -170,7 +170,6 @@
                 </div>
             </div>
 
-            <!-- TABLA DE REGISTROS -->
             <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                 <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
                     <h3 class="font-bold text-slate-700 flex items-center gap-2">
@@ -203,7 +202,7 @@
     </main>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxF1SE_WqGJEs0ctt4xWPSenaVSftvRwBZkrA1no@SacIIUF9/exec"; // Revisa que este link sea correcto (el tuyo parecía cortado al final).
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxF1SE_WqGJEs0ctt4xWPSenaVSftvRwBZkrA1no@SacIIUF9/exec";
         let claveAdmin = localStorage.getItem('claveAdmin_lab_v5') || '1234';
         let esAdmin = false;
         
@@ -211,7 +210,6 @@
         let qrTimeLeft = 30;
         let registrosCargados = [];
         
-        // 10 minutos de sesión para el alumno
         const MAX_TIEMPO_ALUMNO_MS = 10 * 60 * 1000;
         let horaInicioAlumno = Date.now();
         let countdownInterval = null;
@@ -224,16 +222,15 @@
             iniciarTemporizadorAlumno();
         };
 
-        // Algoritmo Matemático de PIN basado en reloj global
+        // ALGORITMO DEL PIN DINÁMICO
         function generarPinDinamico(offset = 0) {
             const ventanaDeTiempo = Math.floor(Date.now() / 30000) + offset;
-            // Ecuación pseudoaleatoria determinista basada en el tiempo
             const hash = Math.sin(ventanaDeTiempo * 9999) * 10000;
             const pin = Math.floor(Math.abs(hash - Math.floor(hash)) * 900) + 100;
             return pin.toString();
         }
 
-        // Valida que el PIN ingresado coincida con el generado en esta ventana de tiempo
+        // VALIDACIÓN DEL PIN PARA BLOQUEAR TRAMPAS
         function validarPinIngresado() {
             if (esAdmin) return true;
             
@@ -244,12 +241,12 @@
             }
 
             const pinActual = generarPinDinamico(0);
-            const pinAnterior = generarPinDinamico(-1); // Tolerancia si justo cambió de minuto
+            const pinAnterior = generarPinDinamico(-1);
 
             if (pinUser === pinActual || pinUser === pinAnterior) {
                 return true;
             } else {
-                mostrarAlerta('PIN incorrecto o vencido. Mira la pantalla del laboratorio.', 'bg-rose-100 text-rose-800');
+                mostrarAlerta('PIN incorrecto. Revisa la pantalla del laboratorio.', 'bg-rose-100 text-rose-800');
                 return false;
             }
         }
@@ -353,7 +350,6 @@
             const pinDisplay = document.getElementById('pinDisplayPizarra');
             if (pinDisplay) pinDisplay.innerText = pinEnPantalla;
 
-            // QR LIMPIO: Sin parámetros para evitar enlaces guardados
             const baseUrl = window.location.href.split('?')[0];
             new QRCode(qrContainer, { text: baseUrl, width: 180, height: 180 });
 
@@ -398,6 +394,7 @@
             if (!esAdmin) {
                 verificarExpiracionAlumno();
                 if (sesionExpirada) return;
+                // SE EJECUTA EL BLOQUEO SI EL PIN NO COINCIDE
                 if (!validarPinIngresado()) return;
             }
 
@@ -451,6 +448,7 @@
             if (!esAdmin) {
                 verificarExpiracionAlumno();
                 if (sesionExpirada) return;
+                // SE EJECUTA EL BLOQUEO SI EL PIN NO COINCIDE
                 if (!validarPinIngresado()) return;
             }
 
