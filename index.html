@@ -203,8 +203,7 @@
     let qrTimeLeft = 30;
     let registrosCargados = [];
 
-    // CONTROL DE TIEMPO PARA ALUMNOS (10 MINUTOS)
-    let tiempoRestanteAlumno = 10 * 60; // 10 minutos en segundos
+    let tiempoRestanteAlumno = 10 * 60; // 10 minutos para alumnos
 
     window.onload = function() {
       cargarDispositivoVinculado();
@@ -215,7 +214,6 @@
 
     function iniciarTemporizadorAlumno() {
       const countdownInterval = setInterval(() => {
-        // Si es admin, el temporizador no le afecta y se oculta el aviso/contador
         if (esAdmin) {
           document.getElementById('timerBadge').classList.add('hidden');
           clearInterval(countdownInterval);
@@ -232,7 +230,6 @@
 
         if (tiempoRestanteAlumno <= 0) {
           clearInterval(countdownInterval);
-          // Ocultar formulario de alumno y mostrar pantalla de bloqueo
           document.getElementById('alumnoView').classList.add('hidden');
           document.getElementById('sessionExpiredView').classList.remove('hidden');
         }
@@ -265,7 +262,6 @@
         const pass = prompt('Ingrese la contraseña docente unificada:');
         if (pass === claveAdmin) {
           esAdmin = true;
-          // Al ser admin, ocultamos el contador de alumno y mostramos el panel indefinido
           document.getElementById('timerBadge').classList.add('hidden');
           document.getElementById('adminPanel').classList.remove('hidden');
           document.getElementById('adminLockIcon').className = 'fa-solid fa-lock-open text-emerald-400';
