@@ -210,7 +210,9 @@
     </main>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxF1SE_WqGJEs0ctt4xWPSenaVSftvRwBZkrA1no0SacIIUF9IJRnOkAV_Q2-q-enUN/exec";
+        // AQUÍ VA TU NUEVO ENLACE CORRECTO
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHrK7ZR7RKLmJRI3Ib_kgi5ZCmBNh5e5BSi81nZfO-Ryjs98LcoklAIXsl_lLE54IH/exec";
+        
         let claveAdmin = localStorage.getItem('claveAdmin_lab_v5') || '1234';
         let esAdmin = false;
         
@@ -316,7 +318,6 @@
 
             const pinMatematico = generarPinDinamico(0);
             
-            // Refrescar QR visual si cambió el código en esta iteración
             if (pinEnPantalla !== pinMatematico) {
                 pinEnPantalla = pinMatematico;
                 document.getElementById('pinDisplayPizarra').innerText = pinEnPantalla;
@@ -327,7 +328,6 @@
                 new QRCode(qrContainer, { text: baseUrl, width: 180, height: 180 });
             }
 
-            // Calcular barra de progreso exacta al reloj matemático
             const segundosRestantes = 30 - (Math.floor(Date.now() / 1000) % 30);
             document.getElementById('qrTimerText').innerText = segundosRestantes + 's';
             document.getElementById('qrProgressBar').style.width = ((segundosRestantes / 30) * 100) + '%';
@@ -356,7 +356,6 @@
                 document.getElementById('adminBtnText').innerText = 'Acceso Docente';
                 document.getElementById('timerBadge').classList.remove('hidden');
                 
-                // Al salir de admin, regresar al PIN Gate
                 document.getElementById('pinGateView').classList.remove('hidden');
                 document.getElementById('alumnoView').classList.add('hidden');
                 pinValidado = false;
@@ -579,3 +578,4 @@
     </script>
 </body>
 </html>
+
