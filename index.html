@@ -34,7 +34,7 @@
   <!-- CONTENIDO PRINCIPAL -->
   <main class="max-w-6xl mx-auto px-4 py-6">
 
-    <!-- VISTA A: PIZARRA QR (PROTEGIDA POR CONTRASEÑA) -->
+    <!-- VISTA A: PIZARRA QR (PROTEGIDA) -->
     <div id="pizarraQRView" class="hidden bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-200 mb-6">
       <div class="flex justify-between items-center mb-4">
         <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Pantalla Autorizada del Laboratorio</span>
@@ -105,7 +105,7 @@
       </form>
     </div>
 
-    <!-- VISTA C: PANEL ADMINISTRADOR PRIVADO (DOCENTE/ENCARGADO) -->
+    <!-- VISTA C: PANEL ADMINISTRADOR PRIVADO -->
     <div id="adminPanel" class="hidden space-y-6">
       
       <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl flex justify-between items-center">
@@ -116,7 +116,7 @@
             <p class="text-xs text-amber-700">Conectado directamente a tu Hoja de Google Sheets.</p>
           </div>
         </div>
-        <button onclick="cambiarPasswordAdmin()" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-3 py-1.5 rounded-lg font-semibold">Cambiar Clave</button>
+        <button onclick="cambiarPasswordAdmin()" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-3 py-1.5 rounded-lg font-semibold">Cambiar Contraseña Única</button>
       </div>
 
       <!-- METRICAS DE HOY -->
@@ -182,7 +182,8 @@
   <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfR5zacNucsmtbmwp9DSYNPAnVIKvvpVnHB6BHrIAtMFq2b9Bs6qclzys-nKAMW7NF/exec";
 
-    let claveAdmin = localStorage.getItem('claveAdmin_lab') || '917126';
+    // Contraseña única unificada (modifica '1234' o cambia '_v3' para actualizar en navegadores)
+    let claveAdmin = localStorage.getItem('claveAdmin_lab_v3') || '1234';
     let esAdmin = false;
     let qrTimer = null;
     let qrTimeLeft = 30;
@@ -194,14 +195,14 @@
       setInterval(cargarDatosDesdeGoogle, 15000);
     };
 
-    // SOLICITAR CLAVE PARA ACTIVAR QR EN EL LAB
+    // ACCESO UNIFICADO A LA PIZARRA QR CON LA MISMA CONTRASEÑA
     function solicitarAccesoPizarraQR() {
-      const pass = prompt('Ingrese la contraseña docente para activar el QR en esta pantalla:');
+      const pass = prompt('Ingrese la contraseña docente unificada para activar el QR:');
       if (pass === claveAdmin) {
         document.getElementById('pizarraQRView').classList.remove('hidden');
         iniciarQRGenerator();
       } else if (pass !== null) {
-        alert('Contraseña incorrecta. No se puede activar la Pizarra QR.');
+        alert('Contraseña incorrecta.');
       }
     }
 
@@ -210,6 +211,7 @@
       clearInterval(qrTimer);
     }
 
+    // ACCESO UNIFICADO AL PANEL DOCENTE CON LA MISMA CONTRASEÑA
     function solicitarAccesoAdmin() {
       if (esAdmin) {
         esAdmin = false;
@@ -217,7 +219,7 @@
         document.getElementById('adminLockIcon').className = 'fa-solid fa-lock text-amber-400';
         document.getElementById('adminBtnText').innerText = 'Acceso Docente';
       } else {
-        const pass = prompt('Ingrese la clave de acceso docente:');
+        const pass = prompt('Ingrese la contraseña docente unificada:');
         if (pass === claveAdmin) {
           esAdmin = true;
           document.getElementById('adminPanel').classList.remove('hidden');
@@ -225,17 +227,17 @@
           document.getElementById('adminBtnText').innerText = 'Cerrar Sesión Admin';
           cargarDatosDesdeGoogle();
         } else if (pass !== null) {
-          alert('Clave incorrecta. Acceso denegado.');
+          alert('Contraseña incorrecta.');
         }
       }
     }
 
     function cambiarPasswordAdmin() {
-      const nueva = prompt('Ingrese la nueva clave de administrador:');
+      const nueva = prompt('Ingrese la nueva contraseña unificada para el QR y el Panel:');
       if (nueva && nueva.trim().length > 0) {
         claveAdmin = nueva.trim();
-        localStorage.setItem('claveAdmin_lab', claveAdmin);
-        alert('Clave actualizada correctamente.');
+        localStorage.setItem('claveAdmin_lab_v3', claveAdmin);
+        alert('¡Contraseña actualizada con éxito para todo el sistema!');
       }
     }
 
@@ -367,7 +369,7 @@
         document.getElementById('notasAlumno').value = '';
         setTimeout(cargarDatosDesdeGoogle, 1000);
       } catch (e) {
-        mostrarAlerta('Error al conectar con el servidor.', 'bg-rose-100 text-rose-800');
+        mostrarAlerta('Error al cambiar en el servidor.', 'bg-rose-100 text-rose-800');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Marcar Salida';
