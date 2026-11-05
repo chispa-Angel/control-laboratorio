@@ -35,39 +35,33 @@
   <!-- CONTENIDO PRINCIPAL -->
   <main class="max-w-6xl mx-auto px-4 py-6">
 
-    <!-- AVISO DE ACCESO SIN ESCANEAR (BLOQUEO POR LINK GUARDADO) -->
-    <div id="noTokenView" class="hidden bg-amber-50 border-2 border-amber-300 p-8 rounded-2xl shadow-xl text-center max-w-xl mx-auto mb-6">
-      <div class="inline-block p-4 bg-amber-100 text-amber-600 rounded-full mb-3">
-        <i class="fa-solid fa-qrcode text-3xl"></i>
-      </div>
-      <h2 class="text-2xl font-bold text-amber-900 mb-2">Escaneo de QR Requerido</h2>
-      <p class="text-sm text-amber-700 mb-6">Estás intentando acceder con un enlace guardado o directo. Por seguridad, debes escanear obligatoriamente el código QR actual que se encuentra proyectado en la pantalla del laboratorio para registrar tu entrada o salida.</p>
-      <div class="p-4 bg-white rounded-xl border border-amber-200 text-xs text-slate-500">
-        Acércate a la pizarra del laboratorio y abre la cámara de tu celular para escanear el código QR activo.
-      </div>
-    </div>
-
     <!-- AVISO DE SESIÓN EXPIRADA PARA ALUMNOS -->
     <div id="sessionExpiredView" class="hidden bg-rose-50 border-2 border-rose-300 p-8 rounded-2xl shadow-xl text-center max-w-xl mx-auto mb-6">
       <div class="inline-block p-4 bg-rose-100 text-rose-600 rounded-full mb-3">
         <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
       </div>
       <h2 class="text-2xl font-bold text-rose-800 mb-2">Sesión de Registro Expirada</h2>
-      <p class="text-sm text-rose-600 mb-6">Por seguridad, han pasado más de 10 minutos desde que escaneaste el QR. Debes volver a escanear el código QR actual en la pantalla del laboratorio.</p>
-      <div class="p-4 bg-white rounded-xl border border-rose-200 text-xs text-slate-500">
-        Acércate nuevamente a la pizarra del laboratorio para escanear el QR activo.
-      </div>
+      <p class="text-sm text-rose-600 mb-6">Por seguridad, han pasado más de 10 minutos desde que escaneaste el QR. Debes volver a escanear el código y PIN actual en la pantalla del laboratorio.</p>
+      <button onclick="location.reload()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-6 py-2.5 rounded-xl shadow transition">
+        <i class="fa-solid fa-rotate-right"></i> Volver a Intentar / Recargar
+      </button>
     </div>
 
     <!-- VISTA A: PIZARRA QR (PROTEGIDA) -->
-    <div id="pizarraQRView" class="hidden bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-200 mb-6">
+    <div id="pizarraQRView" class="hidden bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-200 mb-6 max-w-xl mx-auto">
       <div class="flex justify-between items-center mb-4">
         <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Pantalla Autorizada del Laboratorio</span>
         <button onclick="cerrarPizarraQR()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
       </div>
       <h2 class="text-2xl font-bold text-slate-800 mb-1">Escanea para Registrar Asistencia</h2>
-      <p class="text-sm text-slate-500 mb-6">El código QR expira y cambia cada 30 segundos por seguridad.</p>
+      <p class="text-sm text-slate-500 mb-4">El PIN de seguridad cambia cada 30 segundos.</p>
       
+      <!-- CONTENEDOR DEL PIN DINÁMICO EN GRANDE -->
+      <div class="mb-4 p-4 bg-indigo-50 border-2 border-indigo-200 rounded-2xl inline-block">
+        <span class="block text-xs font-bold text-indigo-500 uppercase">PIN de acceso actual:</span>
+        <span id="pinDisplayPizarra" class="text-4xl font-black tracking-widest text-indigo-900">---</span>
+      </div>
+
       <div class="flex justify-center mb-6">
         <div class="p-4 bg-white border-4 border-indigo-600 rounded-2xl shadow-inner relative">
           <div id="qrcode"></div>
@@ -76,14 +70,14 @@
 
       <div class="max-w-xs mx-auto mb-4">
         <div class="flex justify-between text-xs text-slate-500 mb-1">
-          <span>Actualización en:</span>
+          <span>Nuevo PIN en:</span>
           <span id="qrTimerText" class="font-bold text-indigo-600">30s</span>
         </div>
         <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
           <div id="qrProgressBar" class="bg-indigo-600 h-full w-full transition-all duration-1000"></div>
         </div>
       </div>
-      <p class="text-xs text-slate-400"><i class="fa-solid fa-shield-halved text-emerald-500"></i> Acceso restringido únicamente a personal autorizado</p>
+      <p class="text-xs text-slate-400"><i class="fa-solid fa-shield-halved text-emerald-500"></i> Los alumnos deben ingresar este PIN en su celular</p>
     </div>
 
     <!-- VISTA B: FORMULARIO DEL ALUMNO (MÓVIL) -->
@@ -102,6 +96,16 @@
       <div id="statusAlert" class="hidden p-3 rounded-lg text-sm mb-4"></div>
 
       <form id="registroForm" onsubmit="event.preventDefault();" class="space-y-4">
+        
+        <!-- CAMPO PARA INGRESAR EL PIN DINÁMICO -->
+        <div class="p-4 bg-amber-50 border-2 border-amber-300 rounded-xl">
+          <label class="block text-xs font-black text-amber-900 uppercase mb-1 flex items-center gap-1">
+            <i class="fa-solid fa-key text-amber-600"></i> PIN de la Pizarra (3 dígitos) *
+          </label>
+          <p class="text-xs text-amber-700 mb-2">Escribe el número de 3 dígitos que aparece actualmente en la pantalla del laboratorio:</p>
+          <input type="text" id="pinIngresado" maxlength="3" required placeholder="Ej. 742" class="w-full px-3 py-2.5 bg-white border-2 border-amber-400 rounded-lg text-center font-bold text-xl tracking-widest text-slate-800 focus:ring-2 focus:ring-amber-500">
+        </div>
+
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Completo *</label>
           <input type="text" id="nombreAlumno" required placeholder="Ej. Ana María López" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
@@ -220,19 +224,17 @@
     let horaInicioAlumno = Date.now();
     let countdownInterval = null;
     let sesionExpirada = false;
-    let tieneTokenValido = false;
+    let pinActualSistema = "";
 
     window.onload = function() {
-      // Validar si el enlace trae el parámetro token del QR físico
       const urlParams = new URLSearchParams(window.location.search);
-      const tokenQR = urlParams.get('token');
+      const pinURL = urlParams.get('pin');
 
-      if (tokenQR && tokenQR.startsWith('LAB-')) {
-        tieneTokenValido = true;
-        // Guardamos el token en sessionStorage para que si recargan dentro de los 10 mins siga siendo válido
-        sessionStorage.setItem('token_activo_lab', tokenQR);
-      } else if (sessionStorage.getItem('token_activo_lab')) {
-        tieneTokenValido = true;
+      if (pinURL && pinURL.length === 3) {
+        pinActualSistema = pinURL;
+        sessionStorage.setItem('pin_activo_lab', pinURL);
+      } else if (sessionStorage.getItem('pin_activo_lab')) {
+        pinActualSistema = sessionStorage.getItem('pin_activo_lab');
       }
 
       cargarDispositivoVinculado();
@@ -260,16 +262,8 @@
     function verificarExpiracionAlumno() {
       if (esAdmin) {
         document.getElementById('timerBadge').classList.add('hidden');
-        document.getElementById('noTokenView').classList.add('hidden');
         document.getElementById('sessionExpiredView').classList.add('hidden');
         clearInterval(countdownInterval);
-        return;
-      }
-
-      // Si no escaneó el QR y entró por link directo guardado
-      if (!tieneTokenValido) {
-        document.getElementById('alumnoView').classList.add('hidden');
-        document.getElementById('noTokenView').classList.remove('hidden');
         return;
       }
 
@@ -280,7 +274,6 @@
         sesionExpirada = true;
         clearInterval(countdownInterval);
         document.getElementById('alumnoView').classList.add('hidden');
-        document.getElementById('noTokenView').classList.add('hidden');
         document.getElementById('sessionExpiredView').classList.remove('hidden');
       } else {
         const totalSegundos = Math.floor(milisegundosRestantes / 1000);
@@ -322,7 +315,6 @@
           esAdmin = true;
           sesionExpirada = false;
           document.getElementById('timerBadge').classList.add('hidden');
-          document.getElementById('noTokenView').classList.add('hidden');
           document.getElementById('sessionExpiredView').classList.add('hidden');
           document.getElementById('adminPanel').classList.remove('hidden');
           document.getElementById('adminLockIcon').className = 'fa-solid fa-lock-open text-emerald-400';
@@ -348,9 +340,17 @@
       if (!qrContainer) return;
       qrContainer.innerHTML = '';
 
-      const token = 'LAB-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+      // Generar PIN aleatorio de 3 dígitos (ej. 482)
+      const pinAleatorio = Math.floor(100 + Math.random() * 900).toString();
+      pinActualSistema = pinAleatorio;
+      sessionStorage.setItem('pin_activo_lab', pinAleatorio);
+
+      // Mostrar el PIN en grande en la pantalla de la pizarra
+      const pinDisplay = document.getElementById('pinDisplayPizarra');
+      if (pinDisplay) pinDisplay.innerText = pinAleatorio;
+
       const baseUrl = window.location.href.split('?')[0];
-      const fullUrl = baseUrl + '?token=' + token + '&t=' + Date.now();
+      const fullUrl = baseUrl + '?pin=' + pinAleatorio + '&t=' + Date.now();
 
       new QRCode(qrContainer, { text: fullUrl, width: 180, height: 180 });
 
@@ -390,17 +390,25 @@
       }
     }
 
+    function validarPinIngresado() {
+      if (esAdmin) return true;
+      const pinUser = document.getElementById('pinIngresado').value.trim();
+      if (!pinActualSistema) return true; // Si abrió directo sin generar en esta sesión previa, requerirá el PIN
+      if (pinUser !== pinActualSistema) {
+        mostrarAlerta('PIN incorrecto. Revisa el número de 3 dígitos en la pantalla del laboratorio.', 'bg-rose-100 text-rose-800');
+        return false;
+      }
+      return true;
+    }
+
     async function marcarEntrada() {
       if (!esAdmin) {
-        if (!tieneTokenValido) {
-          alert("Acceso denegado: Debes escanear el código QR físico de la pizarra.");
-          return;
-        }
         verificarExpiracionAlumno();
         if (sesionExpirada) {
           alert("Tu sesión ha expirado (más de 10 minutos). Debes escanear el QR nuevamente.");
           return;
         }
+        if (!validarPinIngresado()) return;
       }
 
       const nombre = document.getElementById('nombreAlumno').value.trim();
@@ -449,15 +457,12 @@
 
     async function marcarSalida() {
       if (!esAdmin) {
-        if (!tieneTokenValido) {
-          alert("Acceso denegado: Debes escanear el código QR físico de la pizarra.");
-          return;
-        }
         verificarExpiracionAlumno();
         if (sesionExpirada) {
           alert("Tu sesión ha expirado (más de 10 minutos). Debes escanear el QR nuevamente para marcar salida.");
           return;
         }
+        if (!validarPinIngresado()) return;
       }
 
       const matricula = document.getElementById('matriculaAlumno').value.trim();
@@ -523,7 +528,7 @@
         if (fechaLimpia === hoyStr) totalHoy++;
         if (!r.horaSalida || r.horaSalida === "") {
           enLab++;
-          if (fechaLimpia !== hoyStr) sinSalida++;
+          if (fechaLinstricto && fechaLimpia !== hoyStr) sinSalida++;
         }
 
         if (query && !r.nombre.toLowerCase().includes(query) && !r.matricula.toLowerCase().includes(query)) return;
