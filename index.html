@@ -34,6 +34,18 @@
   <!-- CONTENIDO PRINCIPAL -->
   <main class="max-w-6xl mx-auto px-4 py-6">
 
+    <!-- AVISO DE SESIÓN EXPIRADA PARA ALUMNOS -->
+    <div id="sessionExpiredView" class="hidden bg-rose-50 border-2 border-rose-300 p-8 rounded-2xl shadow-xl text-center max-w-xl mx-auto mb-6">
+      <div class="inline-block p-4 bg-rose-100 text-rose-600 rounded-full mb-3">
+        <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-rose-800 mb-2">Sesión de Registro Expirada</h2>
+      <p class="text-sm text-rose-600 mb-6">Por seguridad, esta página estuvo abierta más de 10 minutos sin actividad o fue abierta fuera del laboratorio. Debes escanear nuevamente el código QR actual en la pantalla del laboratorio para poder registrarte.</p>
+      <button onclick="location.reload()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-6 py-2.5 rounded-xl shadow transition">
+        <i class="fa-solid fa-rotate-right"></i> Volver a Intentar / Recargar
+      </button>
+    </div>
+
     <!-- VISTA A: PIZARRA QR (PROTEGIDA) -->
     <div id="pizarraQRView" class="hidden bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-200 mb-6">
       <div class="flex justify-between items-center mb-4">
@@ -69,6 +81,9 @@
         </div>
         <h2 class="text-xl font-bold text-slate-800">Registro de Alumnos</h2>
         <p class="text-xs text-slate-500">Horario límite de salida regular: 5:30 PM</p>
+        <div id="timerBadge" class="mt-2 inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-semibold border border-amber-200">
+          <i class="fa-solid fa-clock"></i> Tiempo restante para registrarse: <span id="countdownMin">10:00</span>
+        </div>
       </div>
 
       <div id="statusAlert" class="hidden p-3 rounded-lg text-sm mb-4"></div>
@@ -112,7 +127,7 @@
         <div class="flex items-center gap-3">
           <i class="fa-solid fa-lock text-amber-600 text-xl"></i>
           <div>
-            <h3 class="font-bold text-amber-900">Panel Docente Restringido</h3>
+            <h3 class="font-bold text-amber-900">Panel Docente Restringido (Sesión Activa Indefinida)</h3>
             <p class="text-xs text-amber-700">Conectado directamente a tu Hoja de Google Sheets.</p>
           </div>
         </div>
@@ -180,20 +195,49 @@
   </main>
 
   <script>
-    // NUEVA URL DE GOOGLE APPS SCRIPT
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxF1SE_WqGJEs0ctt4xWPSenaVSftvRwBZkrA1no0SacIIUF9IJRnOkAV_Q2-q-enUN/exec";
 
-    let claveAdmin = localStorage.getItem('claveAdmin_lab_v4') || '1234';
+    let claveAdmin = localStorage.getItem('claveAdmin_lab_v5') || '1234';
     let esAdmin = false;
     let qrTimer = null;
     let qrTimeLeft = 30;
     let registrosCargados = [];
 
+    // CONTROL DE TIEMPO PARA ALUMNOS (10 MINUTOS)
+    let tiempoRestanteAlumno = 10 * 60; // 10 minutos en segundos
+
     window.onload = function() {
       cargarDispositivoVinculado();
       cargarDatosDesdeGoogle();
       setInterval(cargarDatosDesdeGoogle, 15000);
+      iniciarTemporizadorAlumno();
     };
+
+    function iniciarTemporizadorAlumno() {
+      const countdownInterval = setInterval(() => {
+        // Si es admin, el temporizador no le afecta y se oculta el aviso/contador
+        if (esAdmin) {
+          document.getElementById('timerBadge').classList.add('hidden');
+          clearInterval(countdownInterval);
+          return;
+        }
+
+        tiempoRestanteAlumno--;
+        const mins = Math.floor(tiempoRestanteAlumno / 60);
+        const secs = tiempoRestanteAlumno % 60;
+        const relojStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        
+        const counterEl = document.getElementById('countdownMin');
+        if (counterEl) counterEl.innerText = relojStr;
+
+        if (tiempoRestanteAlumno <= 0) {
+          clearInterval(countdownInterval);
+          // Ocultar formulario de alumno y mostrar pantalla de bloqueo
+          document.getElementById('alumnoView').classList.add('hidden');
+          document.getElementById('sessionExpiredView').classList.remove('hidden');
+        }
+      }, 1000);
+    }
 
     function solicitarAccesoPizarraQR() {
       const pass = prompt('Ingrese la contraseña docente unificada para activar el QR:');
@@ -216,10 +260,13 @@
         document.getElementById('adminPanel').classList.add('hidden');
         document.getElementById('adminLockIcon').className = 'fa-solid fa-lock text-amber-400';
         document.getElementById('adminBtnText').innerText = 'Acceso Docente';
+        document.getElementById('timerBadge').classList.remove('hidden');
       } else {
         const pass = prompt('Ingrese la contraseña docente unificada:');
         if (pass === claveAdmin) {
           esAdmin = true;
+          // Al ser admin, ocultamos el contador de alumno y mostramos el panel indefinido
+          document.getElementById('timerBadge').classList.add('hidden');
           document.getElementById('adminPanel').classList.remove('hidden');
           document.getElementById('adminLockIcon').className = 'fa-solid fa-lock-open text-emerald-400';
           document.getElementById('adminBtnText').innerText = 'Cerrar Sesión Admin';
@@ -234,7 +281,7 @@
       const nueva = prompt('Ingrese la nueva contraseña unificada para el QR y el Panel:');
       if (nueva && nueva.trim().length > 0) {
         claveAdmin = nueva.trim();
-        localStorage.setItem('claveAdmin_lab_v4', claveAdmin);
+        localStorage.setItem('claveAdmin_lab_v5', claveAdmin);
         alert('¡Contraseña actualizada con éxito para todo el sistema!');
       }
     }
