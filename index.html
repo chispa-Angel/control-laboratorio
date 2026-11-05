@@ -14,10 +14,10 @@
   <header class="bg-indigo-900 text-white shadow-lg border-b border-indigo-700">
     <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3">
-        <i class="fa-solid me-2 fa-microscope text-2xl text-indigo-400"></i>
+        <i class="fa-solid fa-microscope text-2xl text-indigo-400"></i>
         <div>
           <h1 class="text-xl font-bold tracking-wide">Laboratorio de Maestría</h1>
-          <p class="text-xs text-indigo-200">Registro de Asistencia y Permanencia</p>
+          <p class="text-xs text-indigo-200">Sincronizado en tiempo real con Google Sheets</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -34,7 +34,7 @@
   <!-- CONTENIDO PRINCIPAL -->
   <main class="max-w-6xl mx-auto px-4 py-6">
 
-    <!-- VISTA A: PIZARRA QR (PANTALLA DE ENTRADA) -->
+    <!-- VISTA A: PIZARRA QR (PANTALLA DE ENTRADA EN EL LAB) -->
     <div id="pizarraQRView" class="hidden bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-200 mb-6">
       <div class="flex justify-between items-center mb-4">
         <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Pantalla del Laboratorio</span>
@@ -58,7 +58,7 @@
           <div id="qrProgressBar" class="bg-indigo-600 h-full w-full transition-all duration-1000"></div>
         </div>
       </div>
-      <p class="text-xs text-slate-400"><i class="fa-solid fa-shield-halved text-emerald-500"></i> Sistema Anti-Fraude Activo (Vinculación de Dispositivo + QR Dinámico)</p>
+      <p class="text-xs text-slate-400"><i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i> Conexión en vivo activa</p>
     </div>
 
     <!-- VISTA B: FORMULARIO DEL ALUMNO (MÓVIL) -->
@@ -68,12 +68,12 @@
           <i class="fa-solid fa-user-graduate text-2xl"></i>
         </div>
         <h2 class="text-xl font-bold text-slate-800">Registro de Alumnos</h2>
-        <p class="text-xs text-slate-500">Horario regular de salida: 5:30 PM</p>
+        <p class="text-xs text-slate-500">Horario límite de salida regular: 5:30 PM</p>
       </div>
 
       <div id="statusAlert" class="hidden p-3 rounded-lg text-sm mb-4"></div>
 
-      <form id="registroForm" onsubmit="procesarRegistro(event)" class="space-y-4">
+      <form id="registroForm" onsubmit="event.preventDefault();" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Completo *</label>
           <input type="text" id="nombreAlumno" required placeholder="Ej. Ana María López" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
@@ -95,10 +95,10 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4 pt-2">
-          <button type="button" onclick="marcarEntrada()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
+          <button type="button" id="btnEntrada" onclick="marcarEntrada()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
             <i class="fa-solid fa-right-to-bracket"></i> Marcar Entrada
           </button>
-          <button type="button" onclick="marcarSalida()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
+          <button type="button" id="btnSalida" onclick="marcarSalida()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
             <i class="fa-solid fa-right-from-bracket"></i> Marcar Salida
           </button>
         </div>
@@ -113,7 +113,7 @@
           <i class="fa-solid fa-lock text-amber-600 text-xl"></i>
           <div>
             <h3 class="font-bold text-amber-900">Panel Docente Restringido</h3>
-            <p class="text-xs text-amber-700">Solo tú y el doctor tienen acceso a la bitácora completa y exportación.</p>
+            <p class="text-xs text-amber-700">Conectado directamente a tu Hoja de Google Sheets.</p>
           </div>
         </div>
         <button onclick="cambiarPasswordAdmin()" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-3 py-1.5 rounded-lg font-semibold">Cambiar Clave</button>
@@ -151,9 +151,9 @@
             <i class="fa-solid fa-list-check text-indigo-600"></i> Bitácora General de Asistencia
           </h3>
           <div class="flex items-center gap-2 w-full md:w-auto">
-            <input type="text" id="searchInput" oninput="renderTabla()" placeholder="Buscar alumno..." class="px-3 py-1.5 border rounded-lg text-sm w-full md:w-48">
-            <button onclick="exportarCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 shadow whitespace-nowrap">
-              <i class="fa-solid fa-file-excel"></i> Exportar CSV
+            <input type="text" id="searchInput" oninput="renderTablaLocal()" placeholder="Buscar alumno..." class="px-3 py-1.5 border rounded-lg text-sm w-full md:w-48">
+            <button onclick="cargarDatosDesdeGoogle()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 shadow whitespace-nowrap">
+              <i class="fa-solid fa-rotate"></i> Actualizar
             </button>
           </div>
         </div>
@@ -180,22 +180,22 @@
   </main>
 
   <script>
-    // CONFIGURACIÓN DE SEGURIDAD Y CONFIGURACION GLOBAL
+    // URL DE TU SCRIPT DE GOOGLE SHEETS
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfR5zacNucsmtbmwp9DSYNPAnVIKvvpVnHB6BHrIAtMFq2b9Bs6qclzys-nKAMW7NF/exec";
+
     let claveAdmin = localStorage.getItem('claveAdmin_lab') || '1234';
     let esAdmin = false;
     let qrTimer = null;
     let qrTimeLeft = 30;
-    let currentToken = '';
+    let registrosCargados = [];
 
-    // INICIALIZACIÓN
     window.onload = function() {
       cargarDispositivoVinculado();
-      renderTabla();
       iniciarQRGenerator();
-      verificarParametroQR();
+      cargarDatosDesdeGoogle();
+      setInterval(cargarDatosDesdeGoogle, 15000); // Auto-sincronizar cada 15 segundos
     };
 
-    // SOLICITAR ACCESO DOCENTE
     function solicitarAccesoAdmin() {
       if (esAdmin) {
         esAdmin = false;
@@ -209,7 +209,7 @@
           document.getElementById('adminPanel').classList.remove('hidden');
           document.getElementById('adminLockIcon').className = 'fa-solid fa-lock-open text-emerald-400';
           document.getElementById('adminBtnText').innerText = 'Cerrar Sesión Admin';
-          renderTabla();
+          cargarDatosDesdeGoogle();
         } else if (pass !== null) {
           alert('Clave incorrecta. Acceso denegado.');
         }
@@ -225,21 +225,16 @@
       }
     }
 
-    // QR DINÁMICO (30 SEGUNDOS)
     function iniciarQRGenerator() {
       const qrContainer = document.getElementById('qrcode');
       if (!qrContainer) return;
       qrContainer.innerHTML = '';
 
-      currentToken = 'LAB-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+      const token = 'LAB-' + Math.random().toString(36).substring(2, 9).toUpperCase();
       const baseUrl = window.location.href.split('?')[0];
-      const fullUrl = baseUrl + '?token=' + currentToken + '&t=' + Date.now();
+      const fullUrl = baseUrl + '?token=' + token + '&t=' + Date.now();
 
-      new QRCode(qrContainer, {
-        text: fullUrl,
-        width: 180,
-        height: 180,
-      });
+      new QRCode(qrContainer, { text: fullUrl, width: 180, height: 180 });
 
       qrTimeLeft = 30;
       clearInterval(qrTimer);
@@ -247,29 +242,16 @@
         qrTimeLeft--;
         document.getElementById('qrTimerText').innerText = qrTimeLeft + 's';
         document.getElementById('qrProgressBar').style.width = (qrTimeLeft / 30 * 100) + '%';
-
-        if (qrTimeLeft <= 0) {
-          iniciarQRGenerator();
-        }
+        if (qrTimeLeft <= 0) iniciarQRGenerator();
       }, 1000);
     }
 
     function togglePizarraQR() {
       const view = document.getElementById('pizarraQRView');
       view.classList.toggle('hidden');
-      if (!view.classList.contains('hidden')) {
-        iniciarQRGenerator();
-      }
+      if (!view.classList.contains('hidden')) iniciarQRGenerator();
     }
 
-    function verificarParametroQR() {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('token')) {
-        mostrarAlerta('Código QR validado correctamente. Ingresa tus datos.', 'bg-emerald-100 text-emerald-800');
-      }
-    }
-
-    // MANEJO DE DISPOSITIVO VINCULADO
     function cargarDispositivoVinculado() {
       const vinculo = JSON.parse(localStorage.getItem('vinculo_alumno_lab') || 'null');
       if (vinculo) {
@@ -282,118 +264,112 @@
     }
 
     function guardarVinculo(nombre, matricula, programa) {
-      const vinculo = { nombre, matricula, programa };
-      localStorage.setItem('vinculo_alumno_lab', JSON.stringify(vinculo));
+      localStorage.setItem('vinculo_alumno_lab', JSON.stringify({ nombre, matricula, programa }));
     }
 
-    // PROCESAMIENTO DE ENTRADA Y SALIDA
-    function obtenerRegistros() {
-      return JSON.parse(localStorage.getItem('registros_lab_maestria') || '[]');
+    // SINCRONIZACIÓN CON GOOGLE SHEETS
+    async function cargarDatosDesdeGoogle() {
+      try {
+        const res = await fetch(GOOGLE_SCRIPT_URL);
+        const data = await res.json();
+        registrosCargados = data.reverse(); // Ordenar del más reciente al más antiguo
+        renderTablaLocal();
+      } catch (e) {
+        console.log("Esperando nuevos registros...");
+      }
     }
 
-    function guardarRegistros(arr) {
-      localStorage.setItem('registros_lab_maestria', JSON.stringify(arr));
-      renderTabla();
-    }
-
-    function marcarEntrada() {
+    async function marcarEntrada() {
       const nombre = document.getElementById('nombreAlumno').value.trim();
       const matricula = document.getElementById('matriculaAlumno').value.trim();
       const programa = document.getElementById('programaAlumno').value.trim();
       const notas = document.getElementById('notasAlumno').value.trim();
 
       if (!nombre || !matricula) {
-        mostrarAlerta('Ingresa tu Nombre y Matrícula para continuar.', 'bg-rose-100 text-rose-800');
+        mostrarAlerta('Ingresa tu Nombre y Matrícula.', 'bg-rose-100 text-rose-800');
         return;
       }
 
       guardarVinculo(nombre, matricula, programa);
-
-      let registros = obtenerRegistros();
-      const abierto = registros.find(r => r.matricula === matricula && !r.horaSalida);
-
-      if (abierto) {
-        mostrarAlerta('Ya tienes una entrada registrada sin salida. Marca tu salida antes de volver a entrar.', 'bg-amber-100 text-amber-800');
-        return;
-      }
+      const btn = document.getElementById('btnEntrada');
+      btn.disabled = true;
+      btn.innerText = 'Enviando...';
 
       const ahora = new Date();
-      const nuevo = {
-        id: Date.now(),
+      const payload = {
+        action: "entrada",
         nombre,
         matricula,
         programa,
         fecha: ahora.toLocaleDateString('es-MX'),
         horaEntrada: ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
-        horaSalida: null,
-        estatusSalida: 'En Laboratorio',
         notas
       };
 
-      registros.unshift(nuevo);
-      guardarRegistros(registros);
-      mostrarAlerta(`¡Entrada registrada con éxito! Bienvenido(a), ${nombre}.`, 'bg-emerald-100 text-emerald-800');
-      document.getElementById('notasAlumno').value = '';
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        mostrarAlerta(`¡Entrada registrada con éxito! Bienvenido(a), ${nombre}.`, 'bg-emerald-100 text-emerald-800');
+        document.getElementById('notasAlumno').value = '';
+        setTimeout(cargarDatosDesdeGoogle, 1000);
+      } catch (e) {
+        mostrarAlerta('Error al conectar con el servidor.', 'bg-rose-100 text-rose-800');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Marcar Entrada';
+      }
     }
 
-    function marcarSalida() {
+    async function marcarSalida() {
       const matricula = document.getElementById('matriculaAlumno').value.trim();
       const notas = document.getElementById('notasAlumno').value.trim();
 
       if (!matricula) {
-        mostrarAlerta('Ingresa tu matrícula para registrar tu salida.', 'bg-rose-100 text-rose-800');
+        mostrarAlerta('Ingresa tu matrícula.', 'bg-rose-100 text-rose-800');
         return;
       }
 
-      let registros = obtenerRegistros();
-      const reg = registros.find(r => r.matricula === matricula && !r.horaSalida);
-
-      if (!reg) {
-        mostrarAlerta('No se encontró una entrada activa para esta matrícula.', 'bg-rose-100 text-rose-800');
-        return;
-      }
+      const btn = document.getElementById('btnSalida');
+      btn.disabled = true;
+      btn.innerText = 'Enviando...';
 
       const ahora = new Date();
-      const horaActualStr = ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-      
-      // Evaluar limite 5:30 PM (17:30)
       const limite = new Date();
       limite.setHours(17, 30, 0);
 
-      reg.horaSalida = horaActualStr;
-      reg.estatusSalida = ahora > limite ? 'Extraordinario (> 5:30 PM)' : 'A Tiempo';
-      if (notas) reg.notas = (reg.notas ? reg.notas + ' | ' : '') + notas;
+      const payload = {
+        action: "salida",
+        matricula,
+        horaSalida: ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+        estatusSalida: ahora > limite ? 'Extraordinario (> 5:30 PM)' : 'A Tiempo',
+        notas
+      };
 
-      guardarRegistros(registros);
-      mostrarAlerta(`Salida registrada a las ${horaActualStr}. ¡Buen trabajo!`, 'bg-indigo-100 text-indigo-800');
-      document.getElementById('notasAlumno').value = '';
-    }
-
-    function marcarSalidaManual(id) {
-      if (!esAdmin) return;
-      let registros = obtenerRegistros();
-      const reg = registros.find(r => r.id === id);
-      if (reg) {
-        const horaStr = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-        reg.horaSalida = horaStr + ' (Cierre Docente)';
-        reg.estatusSalida = 'Regularizado por Docente';
-        guardarRegistros(registros);
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        mostrarAlerta('Salida registrada correctamente.', 'bg-indigo-100 text-indigo-800');
+        document.getElementById('notasAlumno').value = '';
+        setTimeout(cargarDatosDesdeGoogle, 1000);
+      } catch (e) {
+        mostrarAlerta('Error al conectar con el servidor.', 'bg-rose-100 text-rose-800');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Marcar Salida';
       }
     }
 
-    function mostrarAlerta(msg, clases) {
-      const box = document.getElementById('statusAlert');
-      box.className = `p-3 rounded-lg text-sm mb-4 font-semibold ${clases}`;
-      box.innerText = msg;
-      box.classList.remove('hidden');
-      setTimeout(() => box.classList.add('hidden'), 5000);
-    }
-
-    // RENDERIZADO DE TABLA Y METRICAS
-    function renderTabla() {
+    function renderTablaLocal() {
       if (!esAdmin) return;
 
-      const registros = obtenerRegistros();
       const query = (document.getElementById('searchInput')?.value || '').toLowerCase();
       const tbody = document.getElementById('tablaBody');
       tbody.innerHTML = '';
@@ -401,9 +377,9 @@
       let enLab = 0, sinSalida = 0, totalHoy = 0;
       const hoyStr = new Date().toLocaleDateString('es-MX');
 
-      registros.forEach(r => {
+      registrosCargados.forEach(r => {
         if (r.fecha === hoyStr) totalHoy++;
-        if (!r.horaSalida) {
+        if (!r.horaSalida || r.horaSalida === "") {
           enLab++;
           if (r.fecha !== hoyStr) sinSalida++;
         }
@@ -413,9 +389,9 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 border-b';
 
-        const estatusBadge = !r.horaSalida 
+        const estatusBadge = (!r.horaSalida || r.horaSalida === "")
           ? '<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 font-bold rounded-full">En Lab</span>'
-          : r.estatusSalida.includes('Extraordinario')
+          : String(r.estatusSalida).includes('Extraordinario')
           ? '<span class="px-2 py-0.5 text-xs bg-purple-100 text-purple-800 font-bold rounded-full">> 5:30 PM</span>'
           : '<span class="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-800 font-bold rounded-full">A Tiempo</span>';
 
@@ -429,7 +405,7 @@
           <td class="p-3 text-xs font-semibold ${r.horaSalida ? 'text-indigo-700' : 'text-slate-400'}">${r.horaSalida || 'Pendiente'}</td>
           <td class="p-3">${estatusBadge}</td>
           <td class="p-3">
-            ${!r.horaSalida ? `<button onclick="marcarSalidaManual(${r.id})" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded border border-indigo-200">Cerrar Salida</button>` : '<span class="text-xs text-slate-400">Completado</span>'}
+            <span class="text-xs text-slate-400">${r.notas || 'Sin notas'}</span>
           </td>
         `;
         tbody.appendChild(tr);
@@ -440,27 +416,12 @@
       document.getElementById('statTotalHoy').innerText = totalHoy;
     }
 
-    // EXPORTACIÓN A EXCEL / CSV
-    function exportarCSV() {
-      if (!esAdmin) return;
-      const registros = obtenerRegistros();
-      if (registros.length === 0) {
-        alert('No hay registros disponibles para exportar.');
-        return;
-      }
-
-      let csv = 'Matricula,Alumno,Programa,Fecha,Hora Entrada,Hora Salida,Estatus,Notas\n';
-      registros.forEach(r => {
-        csv += `"${r.matricula}","${r.nombre}","${r.programa || ''}","${r.fecha}","${r.horaEntrada}","${r.horaSalida || 'SIN SALIDA'}","${r.estatusSalida}","${r.notas || ''}"\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.setAttribute('download', `asistencia_laboratorio_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    function mostrarAlerta(msg, clases) {
+      const box = document.getElementById('statusAlert');
+      box.className = `p-3 rounded-lg text-sm mb-4 font-semibold ${clases}`;
+      box.innerText = msg;
+      box.classList.remove('hidden');
+      setTimeout(() => box.classList.add('hidden'), 5000);
     }
   </script>
 </body>
